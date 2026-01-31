@@ -49,3 +49,4 @@ class Offer extends Mail {
     // To be implemented: logic to check user cash and apply isScam check
   }
 }
+
