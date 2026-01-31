@@ -8,9 +8,7 @@ class User {
   
   Map<Company, int> portfolio = {};
   List<Mail> inbox = []; 
-  
-  // NEW: Tracks offers the user has accepted but haven't been processed by the engine yet
-  List<Offer> activeInvestments = [];
+  List<Offer> activeInvestments = []; 
 
   double netWorth = 0.0;
   int debtStrikes = 0;
@@ -24,18 +22,23 @@ class User {
     required this.carInsurance,
     this.otherExpenses = 0.0,
   }) {
-    // Default Welcome Email
     inbox.add(News(
-      subject: 'Welcome to the Hustle!',
-      body: 'Your inbox delivers newsletters and insights. Watch out for scams, but remember: sometimes you have to spend money to make money.',
+      subject: 'Welcome to your Inbox!',
+      body: 'Welcome to the inbox! Here is where you will see updates about the world through a newsletter that will impact stocks for the next few months.\n\nIt is also where you can get some amazing investment opportunities... or scams! Read carefully!',
       affectedCompanies: {},
     ));
     calculateNetWorth();
   }
 
-  // --- Financial Getters ---
-
   double get monthlyCosts => rent + groceries + transportation + carInsurance + otherExpenses;
+
+  // --- Financial Calculations ---
+
+  void calculateNetWorth() {
+    double portfolioValue = 0.0;
+    portfolio.forEach((company, shares) => portfolioValue += company.price * shares);
+    netWorth = cash + portfolioValue;
+  }
 
   double calculatePortfolioValue() {
     double total = 0.0;
@@ -43,14 +46,8 @@ class User {
     return total;
   }
 
-  void calculateNetWorth() {
-    netWorth = cash + calculatePortfolioValue();
-  }
+  // --- Saga / Mail Logic ---
 
-  // --- Saga / Offer Logic ---
-
-  /// Handles joining a saga or taking a one-time offer.
-  /// Returns true if the user had enough cash to invest.
   bool invest(Offer offer) {
     if (cash >= offer.investmentCost) {
       cash -= offer.investmentCost;
@@ -61,12 +58,13 @@ class User {
     return false;
   }
 
-  // --- Stock Market Logic ---
+  // --- RESTORED STOCK METHODS ---
 
   void buyStock(Company company, int shares) {
     double cost = company.price * shares;
     if (cash >= cost) {
       cash -= cost;
+      // Update portfolio map: add shares to existing or start at 0
       portfolio[company] = (portfolio[company] ?? 0) + shares;
       calculateNetWorth();
     }
@@ -77,7 +75,11 @@ class User {
     if (currentShares >= shares) {
       cash += company.price * shares;
       portfolio[company] = currentShares - shares;
-      if (portfolio[company] == 0) portfolio.remove(company);
+      
+      // Clean up the map if we no longer own any shares
+      if (portfolio[company] == 0) {
+        portfolio.remove(company);
+      }
       calculateNetWorth();
     }
   }

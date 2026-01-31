@@ -6,18 +6,17 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get the width of the current screen
     double screenWidth = MediaQuery.of(context).size.width;
-    double sidePadding = 20.0; // Consistent padding for the edges
+    double sidePadding = 20.0;
 
     return Scaffold(
       backgroundColor: const Color.fromRGBO(2, 30, 67, 1),
       body: Center(
-        child: SingleChildScrollView( // Prevents overflow on smaller screens
+        child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // ---------- LOGO (Edge to Edge) ----------
+              // ---------- LOGO ----------
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: sidePadding),
                 child: Image.asset(
@@ -29,9 +28,9 @@ class WelcomePage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 10), // Small gap between logo and title
+              const SizedBox(height: 10),
 
-              // ---------- TITLE ASSET (Edge to Edge) ----------
+              // ---------- TITLE ASSET ----------
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: sidePadding),
                 child: Image.asset(
@@ -69,7 +68,9 @@ class WelcomePage extends StatelessWidget {
 
               // ---------- SETTINGS BUTTON ----------
               OutlinedButton(
-                onPressed: () {},
+                onPressed: () {
+                   // Add settings logic here
+                },
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   side: const BorderSide(color: Colors.white38, width: 2),
