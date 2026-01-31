@@ -1,27 +1,153 @@
 import 'package:flutter/material.dart';
-import 'inbox.dart';
-import 'stocks.dart';
+
+import 'welcome_page.dart';
 import '../widgets/top_section.dart';
+
+import '../services/game_engine.dart';
 import '../models/user.dart';
-import '../app_state.dart';
+import '../models/company.dart';
+import '../models/month_summary.dart';
+import 'inbox.dart';  
+import 'stocks.dart'; 
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   final User user;
-
   const HomePage({super.key, required this.user});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final Color primaryNavy = const Color.fromRGBO(2, 30, 67, 1);
+  int currentMonthIndex = 0;
+  
+  final List<String> monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  /// Triggers the GameEngine to process financial and market shifts
+  void _handleNextMonth() {
+    setState(() {
+      // 1. Run the Logic through the Service
+      final summary = GameEngine.processNextMonth(widget.user, companies);
+
+      // 2. Advance the UI Calendar
+      currentMonthIndex = (currentMonthIndex + 1) % 12;
+
+      // 3. Bankruptcy Strike Logic
+      if (widget.user.cash < 0) {
+        widget.user.debtStrikes++;
+      } else {
+        widget.user.debtStrikes = 0;
+      }
+
+      // 4. Check for Game Over
+      if (widget.user.debtStrikes >= 2) {
+        _showBankruptcyGameOver();
+      } else {
+        _showSummaryDialog(summary, isWarning: widget.user.debtStrikes == 1);
+      }
+    });
+  }
+
+  /// Displays the results of the month transition
+  void _showSummaryDialog(MonthSummary summary, {bool isWarning = false}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: primaryNavy,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: isWarning ? Colors.redAccent : Colors.white10),
+        ),
+        title: Text(
+          isWarning ? '⚠️ DEBT WARNING' : 'Monthly Report',
+          style: TextStyle(
+            color: isWarning ? Colors.redAccent : Colors.white, 
+            fontWeight: FontWeight.bold
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isWarning)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'Your balance is negative! Reach a positive balance by next month or your hustle ends.',
+                  style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            _summaryRow('Salary', '+ \$${summary.incomeEarned}', Colors.greenAccent),
+            _summaryRow('Expenses', '- \$${summary.expensesPaid.toStringAsFixed(2)}', Colors.redAccent),
+            _summaryRow('Market Flux', '\$${summary.stockChange.toStringAsFixed(2)}', 
+                        summary.stockChange >= 0 ? Colors.greenAccent : Colors.redAccent),
+            const Divider(color: Colors.white24, height: 20),
+            _summaryRow('Total Change', '\$${summary.netChange.toStringAsFixed(2)}', Colors.white),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isWarning ? Colors.redAccent : Colors.greenAccent,
+              foregroundColor: isWarning ? Colors.white : Colors.black,
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Reusable UI row for the summary dialog
+  Widget _summaryRow(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white70)),
+          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  void _showBankruptcyGameOver() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.black,
+        title: const Text('BANKRUPT', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 30)),
+        content: const Text('The banks have seized your assets. Your hustle is over.', style: TextStyle(color: Colors.white)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pushAndRemoveUntil(
+              context, 
+              MaterialPageRoute(builder: (context) => const WelcomePage()), 
+              (route) => false
+            ),
+            child: const Text('RESTART', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: primaryNavy,
       body: SafeArea(
         child: Column(
           children: [
-            // ---------- TOP SECTION ----------
-            TopSection(user: user), 
+            TopSection(user: widget.user),
             const SizedBox(height: 20),
-
-            // ---------- MAIN GRID ----------
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -33,69 +159,42 @@ class HomePage extends StatelessWidget {
                     FeatureTile(
                       icon: Icons.inbox,
                       label: 'Inbox',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => InboxPage(user: user), // Passing user
-                          ),
-                        );
-                      },
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => InboxPage(user: widget.user))),
                     ),
                     FeatureTile(
                       icon: Icons.show_chart,
                       label: 'Stocks',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StocksPage(user: user), // Passing user
-                          ),
-                        );
-                      },
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StocksPage(user: widget.user))),
                     ),
-                    const FeatureTile(
-                      icon: Icons.account_balance_wallet,
-                      label: 'Budgeting',
-                    ),
-                    const FeatureTile(
-                      icon: Icons.pie_chart,
-                      label: 'Portfolio',
-                    ),
+                    const FeatureTile(icon: Icons.account_balance_wallet, label: 'Budgeting'),
+                    const FeatureTile(icon: Icons.pie_chart, label: 'Portfolio'),
                   ],
                 ),
               ),
             ),
-
-            // ---------- BOTTOM NAV ----------
+            
+            // Bottom Navigation Bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 6,
-                    color: Colors.black12,
-                  ),
-                ],
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                border: const Border(top: BorderSide(color: Colors.white10, width: 1)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: () {},
-                  ),
-                  const Text(
-                    'January',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  IconButton(icon: const Icon(Icons.settings, color: Colors.white70), onPressed: () {}),
+                  Text(
+                    monthNames[currentMonthIndex].toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.greenAccent, 
+                      fontWeight: FontWeight.bold, 
+                      letterSpacing: 2.0
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.arrow_forward),
-                    onPressed: () {},
+                    icon: const Icon(Icons.arrow_forward, color: Colors.greenAccent, size: 30),
+                    onPressed: _handleNextMonth,
                   ),
                 ],
               ),
@@ -107,63 +206,40 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// ---------- THE MISSING CLASS ----------
+// ---------- SUPPORTING WIDGETS ----------
+
 class FeatureTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
 
   const FeatureTile({
-    super.key,
-    required this.icon,
-    required this.label,
-    this.onTap,
+    super.key, 
+    required this.icon, 
+    required this.label, 
+    this.onTap
   });
 
   @override
   Widget build(BuildContext context) {
-    // Note: hasUnreadInboxMail needs to be defined in your app_state.dart
-    final bool showUnread = label == 'Inbox' && hasUnreadInboxMail;
-
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Spacer(),
-            Stack(
-              children: [
-                Icon(
-                  icon,
-                  size: 36,
-                  color: Colors.green,
-                ),
-                if (showUnread)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
+            Icon(icon, size: 42, color: Colors.greenAccent),
+            const SizedBox(height: 12),
             Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              label, 
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16)
             ),
-            const Spacer(),
           ],
         ),
       ),

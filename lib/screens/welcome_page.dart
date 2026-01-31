@@ -6,50 +6,82 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get the width of the current screen
+    double screenWidth = MediaQuery.of(context).size.width;
+    double sidePadding = 20.0; // Consistent padding for the edges
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromRGBO(2, 30, 67, 1),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // App Logo or Icon
-            const Icon(Icons.monetization_on, size: 100, color: Colors.green),
-            const SizedBox(height: 20),
-            const Text(
-              'Financial Literacy App',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 50),
-            
-            // Start Button
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UserCreationPage()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
+        child: SingleChildScrollView( // Prevents overflow on smaller screens
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // ---------- LOGO (Edge to Edge) ----------
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: sidePadding),
+                child: Image.asset(
+                  'assets/images/Stonks_logo.png',
+                  width: screenWidth - (sidePadding * 2),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.monetization_on, size: 100, color: Colors.green),
+                ),
               ),
-              child: const Text('Start', style: TextStyle(fontSize: 20)),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Settings Button (Inactive)
-            OutlinedButton(
-              onPressed: () {
-                // Does nothing for now
-              },
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+
+              const SizedBox(height: 10), // Small gap between logo and title
+
+              // ---------- TITLE ASSET (Edge to Edge) ----------
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: sidePadding),
+                child: Image.asset(
+                  'assets/images/Title_Page_Asset.png',
+                  width: screenWidth - (sidePadding * 2),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Text(
+                    "BIT SCAMS",
+                    style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
-              child: const Text('Settings', style: TextStyle(fontSize: 18)),
-            ),
-          ],
+
+              const SizedBox(height: 60),
+
+              // ---------- START BUTTON ----------
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const UserCreationPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 18),
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 5,
+                ),
+                child: const Text('Start', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ---------- SETTINGS BUTTON ----------
+              OutlinedButton(
+                onPressed: () {},
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  side: const BorderSide(color: Colors.white38, width: 2),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Settings', style: TextStyle(fontSize: 18)),
+              ),
+              
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

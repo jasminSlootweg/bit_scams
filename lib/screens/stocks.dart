@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import '../widgets/top_section.dart';
-import '../models/company.dart'; 
-import 'dart:math';
+import '../models/company.dart';
 import '../models/user.dart';
 
 class StocksPage extends StatefulWidget {
-  // FIX: Added the user parameter so the page knows who is buying/selling
   final User user;
 
   const StocksPage({super.key, required this.user});
@@ -16,15 +14,15 @@ class StocksPage extends StatefulWidget {
 
 class _StocksPageState extends State<StocksPage> {
   List<Company> companyList = [];
+  final Color primaryNavy = const Color.fromRGBO(2, 30, 67, 1);
 
   @override
   void initState() {
     super.initState();
-    // Use the global companies list or a filtered version
+    // Use the global list of companies defined in company.dart
     companyList = List.from(companies);
-
-    // Initialize logic remains similar, but ensure we don't overwrite 
-    // existing prices if they've already been set globally.
+    
+    // Ensure companies have a starting price if they don't already
     for (var company in companyList) {
       if (company.price == 0) {
         company.price = 50 + (companyList.indexOf(company) * 5.0);
@@ -32,123 +30,130 @@ class _StocksPageState extends State<StocksPage> {
     }
   }
 
-  void updateAllPrices() {
-    setState(() {
-      for (var company in companyList) {
-        company.updatePrice();
-      }
-      // After prices change, the user's net worth must be recalculated
-      widget.user.calculateNetWorth();
-    });
+  /// Helper to handle the logic of buying a stock with a debt warning
+  void _handleBuy(Company company) {
+    double remainingCash = widget.user.cash - company.price;
+
+    // Safety check: Is the user spending money they need for bills?
+    if (remainingCash < widget.user.monthlyCosts) {
+      _showDebtWarning(company);
+    } else {
+      setState(() {
+        widget.user.buyStock(company, 1);
+      });
+    }
+  }
+
+  /// Alert Dialog for Financial Risk
+  void _showDebtWarning(Company company) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: primaryNavy,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20), 
+          side: const BorderSide(color: Colors.white10),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            SizedBox(width: 10),
+            Text('Financial Risk', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Buying this stock will leave you with \$${(widget.user.cash - company.price).toStringAsFixed(2)}. '
+          'Your monthly expenses are \$${widget.user.monthlyCosts.toStringAsFixed(2)}.\n\n'
+          'You risk going into debt next month!',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            onPressed: () {
+              setState(() => widget.user.buyStock(company, 1));
+              Navigator.pop(context);
+            },
+            child: const Text('Buy Anyway', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: primaryNavy,
       appBar: AppBar(
-        title: const Text('Stocks'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            tooltip: 'Next Month',
-            onPressed: updateAllPrices,
-          ),
-        ],
+        title: const Text('MARKET', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        // The calendar button has been removed to prevent out-of-sync month processing
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Column(
         children: [
-          // FIX: Pass the widget.user to the TopSection to show live cash/net worth
           TopSection(user: widget.user),
-
+          const SizedBox(height: 8),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemCount: companyList.length,
               itemBuilder: (context, index) {
                 final company = companyList[index];
-                // Check how many the user actually owns from the User model
                 final int sharesOwned = widget.user.portfolio[company] ?? 0;
 
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white10),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  company.name,
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  company.sector,
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                '\$${company.price.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: company.goingUp ? Colors.green : Colors.red,
-                                ),
-                              ),
-                              Icon(
-                                company.goingUp ? Icons.arrow_upward : Icons.arrow_downward,
-                                size: 16,
-                                color: company.goingUp ? Colors.green : Colors.red,
-                              ),
-                            ],
-                          ),
-                        ],
+                      _buildStockHeader(company),
+                      const SizedBox(height: 12),
+                      Text(
+                        company.description,
+                        style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7)),
                       ),
-                      const SizedBox(height: 10),
-                      Text(company.description, style: const TextStyle(fontSize: 13, color: Colors.black54)),
-                      const SizedBox(height: 10),
-                      
-                      // ---------- BUY / SELL SECTION ----------
+                      const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Owned: $sharesOwned',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            'OWNED: $sharesOwned',
+                            style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 12),
                           ),
                           Row(
                             children: [
-                              // SELL BUTTON
-                              ElevatedButton(
+                              _actionButton(
+                                label: 'SELL',
+                                color: Colors.redAccent,
                                 onPressed: sharesOwned > 0 
                                   ? () => setState(() => widget.user.sellStock(company, 1)) 
                                   : null,
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red[100], foregroundColor: Colors.red),
-                                child: const Text('Sell'),
                               ),
-                              const SizedBox(width: 8),
-                              // BUY BUTTON
-                              ElevatedButton(
+                              const SizedBox(width: 12),
+                              _actionButton(
+                                label: 'BUY',
+                                color: Colors.greenAccent,
                                 onPressed: widget.user.cash >= company.price 
-                                  ? () => setState(() => widget.user.buyStock(company, 1)) 
+                                  ? () => _handleBuy(company) 
                                   : null,
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green[100], foregroundColor: Colors.green),
-                                child: const Text('Buy'),
                               ),
                             ],
                           ),
@@ -161,6 +166,62 @@ class _StocksPageState extends State<StocksPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStockHeader(Company company) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(company.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(company.sector.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.green, letterSpacing: 1.2)),
+          ],
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '\$${company.price.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: company.goingUp ? Colors.greenAccent : Colors.redAccent,
+              ),
+            ),
+            Icon(
+              company.goingUp ? Icons.trending_up : Icons.trending_down,
+              size: 18,
+              color: company.goingUp ? Colors.greenAccent : Colors.redAccent,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _actionButton({required String label, required Color color, VoidCallback? onPressed}) {
+    bool isActive = onPressed != null;
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isActive ? color.withOpacity(0.3) : Colors.white10,
+        foregroundColor: isActive ? color : Colors.white24,
+        side: BorderSide(color: isActive ? color.withOpacity(0.8) : Colors.white10, width: 1.5),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      ),
+      child: Text(
+        label, 
+        style: TextStyle(
+          fontWeight: FontWeight.w900, 
+          letterSpacing: 1.1,
+          color: isActive ? color : Colors.white24,
+        ),
       ),
     );
   }
