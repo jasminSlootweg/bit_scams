@@ -9,6 +9,7 @@ import 'inbox.dart';
 import 'stocks.dart';
 import 'welcome_page.dart';
 import 'portfolio_page.dart';
+import 'budgeting.dart';
 
 // --- DATA IMPORT ---
 import '../data/company_data.dart'; 
@@ -260,7 +261,10 @@ class _HomePageState extends State<HomePage> {
                     FeatureTile(
                       imagePath: 'assets/images/budget_button.png', 
                       label: 'Budgeting',
-                      onTap: () {},
+                      onTap: () async { 
+                        await Navigator.push(context, MaterialPageRoute(builder: (_) => BudgetPage(user: widget.user))); 
+                        setState(() {}); 
+                      }
                     ),
                     FeatureTile(
                       imagePath: 'assets/images/portfolio_button.png', 

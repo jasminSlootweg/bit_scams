@@ -12,10 +12,20 @@ class PortfolioPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: primaryNavy,
       appBar: AppBar(
-        title: const Text("Performance", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        // --- UPDATED TITLE: Text replaced with Image ---
+        title: Image.asset(
+          'assets/images/portfolio_card.png',
+          height: 40,
+          fit: BoxFit.contain,
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+        // --- ADDED CONSISTENT BACK BUTTON ---
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -35,7 +45,14 @@ class PortfolioPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("CASH OVER TIME", style: TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    const Text("CASH OVER TIME", 
+                      style: TextStyle(
+                        color: Colors.greenAccent, 
+                        fontSize: 12, 
+                        fontWeight: FontWeight.bold, 
+                        letterSpacing: 1.2
+                      )
+                    ),
                     const SizedBox(height: 20),
                     Expanded(
                       child: CustomPaint(
@@ -63,10 +80,14 @@ class PortfolioPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("STOCKS OWNED", style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
+                  const Text("STOCKS OWNED", 
+                    style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)
+                  ),
                   const SizedBox(height: 12),
                   if (user.portfolio.isEmpty)
-                    const Text("No shares currently held.", style: TextStyle(color: Colors.white24)),
+                    const Text("No shares currently held.", 
+                      style: TextStyle(color: Colors.white24)
+                    ),
                   ...user.portfolio.entries.map((entry) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
@@ -94,7 +115,9 @@ class PortfolioPage extends StatelessWidget {
         child: Icon(icon, color: color),
       ),
       title: Text(label, style: const TextStyle(color: Colors.white70)),
-      trailing: Text("\$${amount.toStringAsFixed(2)}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+      trailing: Text("\$${amount.toStringAsFixed(2)}", 
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)
+      ),
     );
   }
 }
@@ -108,28 +131,23 @@ class CashChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (history.length < 2) return;
 
-    // --- SETUP SCALING ---
     double maxVal = history.reduce((a, b) => a > b ? a : b);
     double minVal = history.reduce((a, b) => a < b ? a : b);
     
-    // Ensure we can always see the $0 line by including it in the range
     double viewMax = maxVal < 1000 ? 1000 : maxVal * 1.1;
     double viewMin = minVal > 0 ? -500 : minVal * 1.1;
     double range = viewMax - viewMin;
 
-    // --- DRAW BANKRUPTCY LINE ($0) ---
     final zeroPaint = Paint()
       ..color = Colors.redAccent.withOpacity(0.5)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
     double zeroY = size.height - ((0 - viewMin) / range) * size.height;
-    // Only draw if $0 is within our current view
     if (zeroY >= 0 && zeroY <= size.height) {
       canvas.drawLine(Offset(0, zeroY), Offset(size.width, zeroY), zeroPaint);
     }
 
-    // --- DRAW CASH HISTORY LINE ---
     final linePaint = Paint()
       ..color = Colors.greenAccent
       ..strokeWidth = 3

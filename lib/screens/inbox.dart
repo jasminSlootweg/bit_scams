@@ -27,14 +27,15 @@ class _InboxPageState extends State<InboxPage> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          // --- ADDED BACK BUTTON ---
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'Inbox', 
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+          // --- UPDATED TITLE: Text replaced with Image ---
+          title: Image.asset(
+            'assets/images/inbox_card.png',
+            height: 40, // Adjusted height to fit the AppBar nicely
+            fit: BoxFit.contain,
           ),
           centerTitle: true,
           bottom: const TabBar(

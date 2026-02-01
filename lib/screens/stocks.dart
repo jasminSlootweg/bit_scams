@@ -20,7 +20,6 @@ class _StocksPageState extends State<StocksPage> {
   @override
   void initState() {
     super.initState();
-    // Using the list from company_data.dart
     companyList = List.from(allCompanies);
     
     for (var company in companyList) {
@@ -87,7 +86,12 @@ class _StocksPageState extends State<StocksPage> {
     return Scaffold(
       backgroundColor: primaryNavy,
       appBar: AppBar(
-        title: const Text('MARKET', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        // --- UPDATED TITLE: Text replaced with Image ---
+        title: Image.asset(
+          'assets/images/stocks_card.png', // Using the asset name provided
+          height: 40, 
+          fit: BoxFit.contain,
+        ),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -171,15 +175,14 @@ class _StocksPageState extends State<StocksPage> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // FIXED: Expanded + FittedBox prevents the "RenderFlex overflowed" error
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                height: 24, // Keeps header height consistent
+                height: 24,
                 child: FittedBox(
-                  fit: BoxFit.scaleDown, // Automatically shrinks text if it hits the price
+                  fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
                     company.name, 
@@ -202,7 +205,7 @@ class _StocksPageState extends State<StocksPage> {
             ],
           ),
         ),
-        const SizedBox(width: 12), // Minimum gap between name and price
+        const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
