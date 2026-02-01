@@ -1,5 +1,6 @@
 import 'company.dart';
 import 'mail.dart';
+import '../data/mail_random.dart';
 
 class User {
   String name;

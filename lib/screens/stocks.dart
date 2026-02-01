@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/top_section.dart';
 import '../models/company.dart';
 import '../models/user.dart';
+import '../data/company_data.dart'; 
 
 class StocksPage extends StatefulWidget {
   final User user;
@@ -19,22 +20,19 @@ class _StocksPageState extends State<StocksPage> {
   @override
   void initState() {
     super.initState();
-    // Use the global list of companies defined in company.dart
-    companyList = List.from(companies);
+    // Using the list from company_data.dart
+    companyList = List.from(allCompanies);
     
-    // Ensure companies have a starting price if they don't already
     for (var company in companyList) {
       if (company.price == 0) {
-        company.price = 50 + (companyList.indexOf(company) * 5.0);
+        company.price = 50.0; 
       }
     }
   }
 
-  /// Helper to handle the logic of buying a stock with a debt warning
   void _handleBuy(Company company) {
     double remainingCash = widget.user.cash - company.price;
 
-    // Safety check: Is the user spending money they need for bills?
     if (remainingCash < widget.user.monthlyCosts) {
       _showDebtWarning(company);
     } else {
@@ -44,7 +42,6 @@ class _StocksPageState extends State<StocksPage> {
     }
   }
 
-  /// Alert Dialog for Financial Risk
   void _showDebtWarning(Company company) {
     showDialog(
       context: context,
@@ -95,7 +92,6 @@ class _StocksPageState extends State<StocksPage> {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        // The calendar button has been removed to prevent out-of-sync month processing
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.pop(context),
@@ -173,14 +169,40 @@ class _StocksPageState extends State<StocksPage> {
   Widget _buildStockHeader(Company company) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(company.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-            Text(company.sector.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.green, letterSpacing: 1.2)),
-          ],
+        // FIXED: Expanded + FittedBox prevents the "RenderFlex overflowed" error
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 24, // Keeps header height consistent
+                child: FittedBox(
+                  fit: BoxFit.scaleDown, // Automatically shrinks text if it hits the price
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    company.name, 
+                    style: const TextStyle(
+                      fontSize: 18, 
+                      fontWeight: FontWeight.bold, 
+                      color: Colors.white
+                    )
+                  ),
+                ),
+              ),
+              Text(
+                company.sector.toUpperCase(), 
+                style: const TextStyle(
+                  fontSize: 10, 
+                  color: Colors.green, 
+                  letterSpacing: 1.2
+                )
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 12), // Minimum gap between name and price
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [

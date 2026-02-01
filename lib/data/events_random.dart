@@ -148,4 +148,51 @@ final List<RandomEvent> allRandomEvents = [
       EventOption(label: "Receive \$600 stimulus", onSelected: (u) => u.cash += 600),
     ],
   ),
+
+  // --- MISCELLANEOUS ---
+  RandomEvent(
+    title: "Dinner with Friends",
+    description: "A group of friends invites you to a fancy new steakhouse. It's going to be pricey.",
+    options: [
+      EventOption(label: "Enjoy the night (\$120)", onSelected: (u) => u.cash -= 120),
+      EventOption(label: "Just have a drink (\$25)", onSelected: (u) => u.cash -= 25),
+      EventOption(label: "Sorry, I'm busy", onSelected: (u) => null),
+    ],
+  ),
+  RandomEvent(
+    title: "Wedding Invitation",
+    description: "A close cousin is getting married. You need a gift and a decent outfit.",
+    options: [
+      EventOption(label: "Wedding costs (\$350)", onSelected: (u) => u.cash -= 350),
+      EventOption(label: "Send a card only (\$30)", onSelected: (u) => u.cash -= 30),
+    ],
+  ),
+  RandomEvent(
+    title: "Concert Tickets",
+    description: "Your favorite band just announced a surprise show in town!",
+    options: [
+      EventOption(label: "Buy front row (\$250)", onSelected: (u) => u.cash -= 250),
+      EventOption(label: "Buy nosebleeds (\$60)", onSelected: (u) => u.cash -= 60),
+      EventOption(label: "Listen on Spotify", onSelected: (u) => null),
+    ],
+  ),
+
+  RandomEvent(
+    title: "Tech Upgrade",
+    description: "Your phone is two years old and starting to lag. The new model just dropped.",
+    options: [
+      EventOption(label: "Upgrade now (\$1,100)", onSelected: (u) => u.cash -= 1100),
+      EventOption(label: "Monthly payment (\$45/mo)", onSelected: (u) => u.otherExpenses += 45),
+      EventOption(label: "Keep your current phone", onSelected: (u) => null),
+    ],
+  ),
+  RandomEvent(
+    title: "Coffee Habit",
+    description: "You've been visiting the local cafe every morning. It's adding up.",
+    options: [
+      EventOption(label: "Buy an espresso machine (\$400)", onSelected: (u) => u.cash -= 400),
+      EventOption(label: "Keep buying daily (\$150/mo)", onSelected: (u) => u.otherExpenses += 150),
+      EventOption(label: "Drink office coffee", onSelected: (u) => null),
+    ],
+  ),
 ];

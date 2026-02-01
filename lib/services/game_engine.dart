@@ -5,6 +5,8 @@ import '../models/mail.dart';
 import '../models/month_summary.dart';
 import '../models/randomEvent.dart';
 import '../data/events_random.dart';
+import '../data/mail_random.dart';
+
 
 class GameEngine {
   static final Random _random = Random();
@@ -92,16 +94,17 @@ class GameEngine {
     return MonthSummary(
       incomeEarned: user.baseSalary,
       expensesPaid: user.monthlyCosts,
-      stockChange: stockDiff, // Higher or Lower than before
-      totalStockValue: stockValueAfterMarketMove, // New current value
-      mailInvestmentResult: netMailResult, // Profit or Loss from mail
+      stockChange: stockDiff,
+      totalStockValue: stockValueAfterMarketMove,
+      mailInvestmentResult: netMailResult,
       netChange: (user.cash + stockValueAfterMarketMove) - oldTotalNetWorth,
     );
   }
 
-  /// --- RANDOM EVENT ROLLER ---
+  /// --- RANDOM EVENT ROLLER (Guaranteed 100% Monthly Event) ---
   static RandomEvent? rollForRandomEvent(User user) {
     // Priority 1: Consequence-based events
+    // These still have a probability roll because they are based on player "neglect"
     if (user.hasCar) {
       double breakdownChance = 0.03 + (user.maintenanceSkips * 0.20);
       if (_random.nextDouble() < breakdownChance) {
@@ -138,20 +141,21 @@ class GameEngine {
       }
     }
 
-    // Priority 2: General Life Events (15% chance)
-    if (_random.nextDouble() < 0.15) {
-      List<RandomEvent> validPool = allRandomEvents.where((e) {
-        if (e.title == "Buy a Car" && user.hasCar) return false;
-        if (e.title == "Partner Talks About Kids" && user.hasKids) return false;
-        if ((e.title == "Child Medical Bill" || e.title == "Birthday Party") && !user.hasKids) return false;
-        if (e.title == "Routine Car Maintenance" && !user.hasCar) return false;
-        return true;
-      }).toList();
+    // Priority 2: General Life Events
+    // Logic updated: Removed probability check so an event is GUARANTEED every month.
+    List<RandomEvent> validPool = allRandomEvents.where((e) {
+      if (e.title == "Buy a Car" && user.hasCar) return false;
+      if (e.title == "Partner Talks About Kids" && user.hasKids) return false;
+      if ((e.title == "Child Medical Bill" || e.title == "Birthday Party") && !user.hasKids) return false;
+      if (e.title == "Routine Car Maintenance" && !user.hasCar) return false;
+      return true;
+    }).toList();
 
-      if (validPool.isNotEmpty) {
-        return validPool[_random.nextInt(validPool.length)];
-      }
+    if (validPool.isNotEmpty) {
+      // Pick one at random from the pool
+      return validPool[_random.nextInt(validPool.length)];
     }
+    
     return null;
   }
 }

@@ -10,6 +10,9 @@ import 'stocks.dart';
 import 'welcome_page.dart';
 import 'portfolio_page.dart';
 
+// --- DATA IMPORT ---
+import '../data/company_data.dart'; 
+
 class HomePage extends StatefulWidget {
   final User user;
   const HomePage({super.key, required this.user});
@@ -21,11 +24,18 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final Color primaryNavy = const Color.fromRGBO(2, 30, 67, 1);
   int currentMonthIndex = 0;
-  final List<String> monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  
+  final List<String> monthNames = [
+    'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 
+    'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+  ];
+
+  // Helper to check for unread mail
+  bool get hasUnreadMail => widget.user.inbox.any((mail) => !mail.isRead);
 
   void _handleNextMonth() {
     setState(() {
-      final summary = GameEngine.processNextMonth(widget.user, companies);
+      final summary = GameEngine.processNextMonth(widget.user, allCompanies);
       currentMonthIndex = (currentMonthIndex + 1) % 12;
 
       if (widget.user.debtStrikes >= 2) {
@@ -49,7 +59,10 @@ class _HomePageState extends State<HomePage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isWarning ? '⚠️ DEBT WARNING' : 'Monthly Report', 
-          style: TextStyle(color: isWarning ? Colors.redAccent : Colors.white, fontWeight: FontWeight.bold)
+          style: TextStyle(
+            color: isWarning ? Colors.redAccent : Colors.white, 
+            fontWeight: FontWeight.bold
+          )
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -58,7 +71,6 @@ class _HomePageState extends State<HomePage> {
             _summaryRow('Fixed Expenses', '-\$${summary.expensesPaid.toStringAsFixed(2)}', Colors.redAccent),
             const Divider(color: Colors.white24, height: 20),
             
-            // --- STOCK CALCULATION SECTION ---
             _summaryRow('Portfolio Value', '\$${summary.totalStockValue.toStringAsFixed(2)}', Colors.white),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -80,7 +92,6 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 10),
 
-            // --- MAIL INVESTMENT SECTION ---
             if (summary.mailInvestmentResult != 0)
               _summaryRow(
                 summary.mailInvestmentResult > 0 ? 'Mail Profit' : 'Mail Loss', 
@@ -99,9 +110,9 @@ class _HomePageState extends State<HomePage> {
               minimumSize: const Size(double.infinity, 45),
             ),
             onPressed: () {
-              Navigator.pop(context); // Close summary
+              Navigator.pop(context); 
               if (eventToTrigger != null) {
-                _showRandomEventDialog(eventToTrigger); // Show random event next
+                _showRandomEventDialog(eventToTrigger); 
               }
             },
             child: const Text('CONTINUE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
@@ -128,7 +139,6 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(event.description, style: const TextStyle(color: Colors.white70)),
             const SizedBox(height: 15),
-            // If the event has an immediate cash impact, show it clearly
             if (event.options.any((opt) => opt.label.contains('\$'))) 
               const Text("Your decision will impact your balance immediately.", 
                 style: TextStyle(color: Colors.white54, fontSize: 11, fontStyle: FontStyle.italic)),
@@ -177,7 +187,10 @@ class _HomePageState extends State<HomePage> {
         title: const Text('BANKRUPT', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
         content: const Text('You couldn\'t pay the bills. Your journey ends here.', style: TextStyle(color: Colors.white)),
         actions: [
-          TextButton(onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomePage()), (r) => false), child: const Text('RESTART')),
+          TextButton(
+            onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomePage()), (r) => false), 
+            child: const Text('RESTART')
+          ),
         ],
       ),
     );
@@ -190,7 +203,7 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: Column(
           children: [
-            TopSection(user: widget.user),
+            TopSection(user: widget.user), 
             const SizedBox(height: 20),
             Expanded(
               child: Padding(
@@ -201,13 +214,40 @@ class _HomePageState extends State<HomePage> {
                   mainAxisSpacing: 1,
                   childAspectRatio: 1.1,
                   children: [
-                    FeatureTile(
-                      imagePath: 'assets/images/inbox_button.png', 
-                      label: 'Inbox', 
-                      onTap: () async { 
-                        await Navigator.push(context, MaterialPageRoute(builder: (_) => InboxPage(user: widget.user))); 
-                        setState(() {}); 
-                      }
+                    // --- INBOX TILE WITH NOTIFICATION DOT ---
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        FeatureTile(
+                          imagePath: 'assets/images/inbox_button.png', 
+                          label: 'Inbox', 
+                          onTap: () async { 
+                            await Navigator.push(context, MaterialPageRoute(builder: (_) => InboxPage(user: widget.user))); 
+                            setState(() {}); // Refresh dot state when returning
+                          }
+                        ),
+                        if (hasUnreadMail)
+                          Positioned(
+                            top: 25,  // Adjust these based on your button image size
+                            right: 25,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: primaryNavy, width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     FeatureTile(
                       imagePath: 'assets/images/stocks_button.png', 
@@ -220,9 +260,7 @@ class _HomePageState extends State<HomePage> {
                     FeatureTile(
                       imagePath: 'assets/images/budget_button.png', 
                       label: 'Budgeting',
-                      onTap: () {
-                        // Add your budgeting logic here
-                      },
+                      onTap: () {},
                     ),
                     FeatureTile(
                       imagePath: 'assets/images/portfolio_button.png', 
@@ -245,14 +283,53 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBottomNav() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.05)),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(Icons.settings, color: Colors.white54),
-          Text(monthNames[currentMonthIndex], style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, letterSpacing: 2)),
-          IconButton(icon: const Icon(Icons.arrow_forward, color: Colors.greenAccent, size: 30), onPressed: _handleNextMonth),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.asset(
+                'assets/images/month_card.png',
+                width: 150, 
+                fit: BoxFit.contain,
+              ),
+              Text(
+                monthNames[currentMonthIndex],
+                style: const TextStyle(
+                  color: Color(0xFF021E43),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
+          ),
+          
+          GestureDetector(
+            onTap: _handleNextMonth,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'NEXT MONTH',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Image.asset(
+                  'assets/images/next_month_button.png',
+                  width: 50,
+                  fit: BoxFit.contain,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -261,7 +338,7 @@ class _HomePageState extends State<HomePage> {
 
 class FeatureTile extends StatelessWidget {
   final String imagePath;
-  final String label; // Kept for semantics/tooltips if needed
+  final String label;
   final VoidCallback? onTap;
 
   const FeatureTile({
@@ -275,12 +352,12 @@ class FeatureTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      splashColor: Colors.transparent,   // Removes the grey circular ripple
-      highlightColor: Colors.transparent, // Removes the tap highlight
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
       child: Center(
         child: Image.asset(
           imagePath,
-          fit: BoxFit.contain, // Ensures the full button image is visible
+          fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) => Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
